@@ -26,9 +26,3 @@ variable "max_size" {
   type    = number
   default = 4
 }
-variable "region" {
-  default = "ap-southeast-2"
-}
-variable "cluster_name" {
-  default = "sideproj-eks"
-}

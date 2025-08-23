@@ -1,0 +1,45 @@
+# Terraform directories and state
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfplan
+tfplan/
+
+# Do NOT ignore lock file (keep it versioned everywhere)
+!**/.terraform.lock.hcl
+
+# Local variable files (use *.tfvars.example instead)
+*.tfvars
+*.tfvars.json
+
+# Terraform override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI config files
+.terraformrc
+terraform.rc
+
+# Kubernetes local artifacts (kubeconfig outputs)
+kubeconfig
+kubeconfig.*
+*.kubeconfig
+.kube/
+
+# Editor/IDE
+.vscode/
+.history/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs / temp
+*.log
+*.tmp
