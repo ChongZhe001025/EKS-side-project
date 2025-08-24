@@ -15,8 +15,7 @@ spec:
     spec:
       containers:
         - name: demo
-          # 將此映像改為你的 Harbor 倉庫，例如: harbor.example.com/project/demo-app:latest
-          image: nginx:alpine
+          image: harbor.czhuang.dev/demo/demo-app:latest
           ports:
             - containerPort: 80
       imagePullSecrets:
