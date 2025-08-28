@@ -1,22 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: demo-app
-  namespace: demo
+  name: web
+  namespace: sideproj
+  labels: { app: web }
 spec:
-  replicas: 1
+  replicas: 2
   selector:
-    matchLabels:
-      app: demo
+    matchLabels: { app: web }
   template:
     metadata:
-      labels:
-        app: demo
+      labels: { app: web }
     spec:
-      containers:
-        - name: demo
-          image: harbor.czhuang.dev/demo/demo-app:latest
-          ports:
-            - containerPort: 80
       imagePullSecrets:
         - name: harbor-regcred
+      containers:
+        - name: web
+          image: harbor.czhuang.dev/sideproj/web:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: "production"

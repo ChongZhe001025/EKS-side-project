@@ -1,22 +1,10 @@
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.6"
   required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-    http = {
-      source  = "hashicorp/http"
-      version = "~> 3.4"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.29"
-    }
-    helm = {
-      source  = "hashicorp/helm"
-      version = "~> 2.13"
-    }
+    aws        = { source = "hashicorp/aws",        version = "~> 5.0" }
+    kubernetes = { source = "hashicorp/kubernetes", version = "~> 2.32" }
+    helm       = { source = "hashicorp/helm",       version = "~> 2.12" }
+    random     = { source = "hashicorp/random",     version = "~> 3.6" }
   }
 }
 
@@ -24,11 +12,9 @@ provider "aws" {
   region = var.region
 }
 
-# 連線到剛建立好的 EKS 叢集供 helm/kubernetes provider 使用
 data "aws_eks_cluster" "this" {
   name = module.eks.cluster_name
 }
-
 data "aws_eks_cluster_auth" "this" {
   name = module.eks.cluster_name
 }

@@ -1,0 +1,15 @@
+grafana:
+  service:
+    type: LoadBalancer
+  ingress:
+    enabled: false
+  persistence:
+    enabled: true
+    type: pvc
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+    storageClassName: gp3
+prometheus:
+  prometheusSpec:
+    retention: 15d

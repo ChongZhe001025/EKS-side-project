@@ -1,28 +1,23 @@
 variable "region" {
-  type    = string
-  default = "ap-southeast-2"
+  description = "AWS region to deploy to"
+  type        = string
+  default     = "ap-southeast-2"
 }
-variable "cluster_name" {
-  type    = string
-  default = "sideproj-eks"
+
+variable "name" {
+  description = "Base name for your EKS cluster and related resources"
+  type        = string
+  default     = "sideproj-eks"
 }
-variable "kubernetes_version" {
-  type    = string
-  default = "1.30"
+
+variable "github_owner" {
+  description = "GitHub organization or username that hosts the repo"
+  type        = string
+  default     = "ChongZHe001025"
 }
-variable "node_instance_types" {
-  type    = list(string)
-  default = ["t3.medium"]
-}
-variable "desired_size" {
-  type    = number
-  default = 2
-}
-variable "min_size" {
-  type    = number
-  default = 1
-}
-variable "max_size" {
-  type    = number
-  default = 4
+
+variable "github_repo" {
+  description = "GitHub repository name that will deploy to EKS"
+  type        = string
+  default     = "EKS-side-project"
 }
