@@ -1,20 +1,21 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: demo-app
+  name: monitoring
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/ChongZhe001025/EKS-side-project.git
+    repoURL: https://github.com/<YOUR_GITHUB>/<YOUR_REPO>.git
     targetRevision: main
-    path: k8s
+    path: gitops/stacks/monitoring
+    helm:
+      valueFiles:
+        - kps-values.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: demo
+    namespace: monitoring
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
-    syncOptions:
-      - CreateNamespace=true

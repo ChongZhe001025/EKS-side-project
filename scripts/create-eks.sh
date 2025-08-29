@@ -7,7 +7,7 @@
 # - plan-only / dry-run / auto-approve apply.
 # - Two-phase apply (optional): Phase1 VPC+EKS (容錯 target 不存在時自動退回一般 apply)，Phase2 其餘附加元件。
 # - Post steps: wait for EKS ACTIVE, update kubeconfig (alias=cluster name), wait nodes ready.
-# - Optional: apply infra/aws-auth.yaml, wait addons rollout (ALB Controller / Argo CD)。
+# - Optional: apply infra/aws-auth.yaml（⚠️ EKS v20 建議改用 Access Entries），wait addons rollout。
 # - AWS profile 與 kubeconfig 路徑支援；完整日誌與摘要輸出。
 #
 # Usage:
@@ -27,7 +27,7 @@
 #   --skip-wait                   Skip EKS status/node waits
 #   --confirm-account             Ask to confirm AWS account ID before apply
 #   --two-phase-apply             Phase1: VPC+EKS → kubeconfig → Phase2: addons
-#   --apply-aws-auth              After Phase1, kubectl apply infra/aws-auth.yaml
+#   --apply-aws-auth              After Phase1, kubectl apply infra/aws-auth.yaml（⚠️ v20 通常不需要）
 #   --wait-addons                 After apply, wait ALB Controller / Argo CD rollout
 #   --profile NAME                Use specific AWS profile
 #   --kubeconfig PATH             Use specific kubeconfig file path
@@ -88,14 +88,14 @@ warn(){ printf '[%s] \033[33mWARN\033[0m %s\n' "$(date +'%F %T')" "$*" | { tee -
 err() { printf '[%s] \033[31mERROR\033[0m %s\n' "$(date +'%F %T')" "$*" | { tee -a "${LOG_FILE:-/dev/null}" >&2 || true; }; }
 need(){ command -v "$1" >/dev/null 2>&1 || { err "Required command '$1' not found in PATH"; exit 4; }; }
 
-# Safer runner (no eval)
-run() { local cmd=( $* ); "${cmd[@]}"; }
+# Safer runner
+run() { "$@"; }
 
-# Retry wrapper for terraform apply (API throttling 等偶發)
+# Retry wrapper for terraform apply（避免暫時性 API 錯誤）
 retry_tf_apply() {
   local tries=${1:-2} delay=10 i=1; shift || true
   while true; do
-    if run "$*"; then return 0; fi
+    if run "$@"; then return 0; fi
     if (( i >= tries )); then return 1; fi
     warn "terraform apply failed; retrying in ${delay}s (attempt $((i+1))/$tries)..."
     sleep "$delay"; ((i++))
@@ -178,7 +178,7 @@ REGION="${OVERRIDE_REGION:-${TF_REGION:-}}"
 [[ -z "$REGION" ]] && { err "Resolve region failed. Use --region or export AWS_REGION."; exit 5; }
 
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null || true)
-CALLER_ARN=$(aws sts get-caller-identity --query Arn --output text 2>/devnull || true)
+CALLER_ARN=$(aws sts get-caller-identity --query Arn --output text 2>/dev/null || true)
 
 echo
 log "About to create/update EKS:"
@@ -252,15 +252,18 @@ if [[ "$SKIP_WAIT" != "true" ]]; then
 
     if [[ "$WAIT_NODES" =~ ^[0-9]+$ && "$WAIT_NODES" -gt 0 ]]; then
       log "Waiting for $WAIT_NODES Ready node(s) ..."
+      # 用 JSONPath 計數更穩定
       ready=0; for _ in {1..60}; do
-        ready=$(kubectl get nodes 2>/dev/null | awk '/ Ready /{c++} END{print c+0}')
+        ready=$(kubectl get nodes -o jsonpath='{range .items[*]}{range .status.conditions[?(@.type=="Ready")]}{.status}{"\n"}{end}{end}' \
+                | grep -c '^True$' || true)
         (( ready >= WAIT_NODES )) && break; sleep 10
       done
       (( ready >= WAIT_NODES )) || warn "Only $ready node(s) Ready; continuing."
     fi
 
     if [[ "$APPLY_AWS_AUTH" == "true" && -f "$INFRA_DIR/aws-auth.yaml" ]]; then
-      log "Applying infra/aws-auth.yaml ..."
+      warn "EKS v20 建議改用 Access Entries（module.eks.access_entries）；aws-auth.yaml 通常不需要。"
+      log "Applying infra/aws-auth.yaml (you opted-in) ..."
       kubectl apply -f "$INFRA_DIR/aws-auth.yaml" || warn "apply aws-auth failed (continuing)"
     fi
   fi

@@ -1,0 +1,16 @@
+loki:
+  persistence:
+    enabled: true
+    size: 20Gi
+promtail:
+  enabled: true
+
+# loki:
+#   ingress:
+#     enabled: true
+#     ingressClassName: alb
+#     annotations:
+#       kubernetes.io/ingress.class: alb
+#       alb.ingress.kubernetes.io/scheme: internet-facing
+#     hosts:
+#       - loki.czhuang.dev   # 之後可再用 external-dns 自動綁定

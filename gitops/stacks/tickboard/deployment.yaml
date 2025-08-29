@@ -1,23 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web
-  namespace: sideproj
-  labels: { app: web }
+  name: tickboard
+  namespace: tickboard
 spec:
   replicas: 2
   selector:
-    matchLabels: { app: web }
+    matchLabels: { app: tickboard }
   template:
     metadata:
-      labels: { app: web }
+      labels: { app: tickboard }
     spec:
       imagePullSecrets:
-        - name: harbor-regcred
+        - name: harbor-pull
       containers:
-        - name: web
-          image: harbor.czhuang.dev/sideproj/web:latest
-          imagePullPolicy: IfNotPresent
+        - name: tickboard
+          image: harbor.czhuang.dev/library/tickboard:CHANGE_ME   # 會由 CI 更新
           ports:
             - containerPort: 3000
           env:
