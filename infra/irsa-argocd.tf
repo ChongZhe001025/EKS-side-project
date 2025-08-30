@@ -33,7 +33,9 @@ module "argocd_irsa" {
 
   create_role      = true
   role_name        = "${var.cluster_name}-argocd"
-  role_policy_arns = [aws_iam_policy.argocd_optional.arn]
+  role_policy_arns = {
+    argocd = aws_iam_policy.argocd_optional.arn
+  }
 
   oidc_providers = {
     main = {

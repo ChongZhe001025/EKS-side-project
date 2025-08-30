@@ -18,9 +18,5 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  kubernetes {
-    host                   = data.aws_eks_cluster.this.endpoint
-    cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
-    token                  = data.aws_eks_cluster_auth.this.token
-  }
+  # 不需額外設定，會自動繼承 kubernetes provider 設定
 }

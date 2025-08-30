@@ -21,3 +21,14 @@ variable "vpc_cidr" {
   type        = string
   default     = "10.0.0.0/16"
 }
+
+variable "enable_amp_remote_write" {
+  description = "是否啟用 Prometheus remote_write 到 AMP"
+  type        = bool
+  default     = false
+}
+
+variable "amp_workspace_id" {
+  description = "Amazon Managed Prometheus Workspace 的 ID"
+  type        = string
+}

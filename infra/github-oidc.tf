@@ -1,31 +1,59 @@
-# GitHub OIDC Provider
-module "iam_oidc_provider" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-oidc-provider"
-  version = "~> 5.60"
-
-  url  = "https://token.actions.githubusercontent.com"
-  tags = { Project = local.project_tag }
+data "tls_certificate" "gha" {
+  url = "https://token.actions.githubusercontent.com"
 }
 
-# GitHub Actions 專用 IAM Role（給 Terraform/CI AssumeRole）
-module "gha_role_terraform" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role"
-  version = "~> 5.60"
+resource "aws_iam_openid_connect_provider" "github" {
+  url = "https://token.actions.githubusercontent.com"
 
-  name = "gha-terraform"
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.gha.certificates[0].sha1_fingerprint]
 
-  assume_role_principals = {
-    # 直接用上面 provider 輸出的 arn
-    federated = [module.iam_oidc_provider.arn]
+  tags = {
+    Project = local.project_tag
   }
+}
+data "aws_iam_policy_document" "gha_assume_role" {
+  statement {
+    effect = "Allow"
 
-  # 讓特定 repo/branch 能 AssumeRole
-  # 例：repo:OWNER/REPO:ref:refs/heads/main
-  oidc_subjects = local.github_subjects
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.github.arn]
+    }
 
-  policy_documents = [
-    data.aws_iam_policy_document.gha_tf_infra.json
-  ]
+    actions = ["sts:AssumeRoleWithWebIdentity"]
 
-  tags = { Project = local.project_tag }
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+
+    # 支援多個 subjects
+    condition {
+      test     = "StringLike"
+      variable = "token.actions.githubusercontent.com:sub"
+      values   = local.github_subjects
+    }
+  }
+}
+
+resource "aws_iam_role" "gha_terraform" {
+  name               = "gha-terraform"
+  assume_role_policy = data.aws_iam_policy_document.gha_assume_role.json
+
+  tags = {
+    Project = local.project_tag
+  }
+}
+resource "aws_iam_role_policy_attachment" "gha_admin" {
+  role       = aws_iam_role.gha_terraform.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+output "github_oidc_provider_arn" {
+  value = aws_iam_openid_connect_provider.github.arn
+}
+
+output "gha_terraform_role_arn" {
+  value = aws_iam_role.gha_terraform.arn
 }
